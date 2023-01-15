@@ -1,16 +1,12 @@
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.lang.UnsupportedOperationException
 
 @OptIn(InternalCoroutinesApi::class)
 fun main(args: Array<String>) = runBlocking {
-  val task = GlobalScope.async {
+  val task = GlobalScope.launch {
     doSomething()
   }
-
-  task.await()
+  task.join()
 
   println("Completed")
 }
