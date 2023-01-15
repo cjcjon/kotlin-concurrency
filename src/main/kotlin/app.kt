@@ -1,16 +1,18 @@
 import kotlinx.coroutines.*
-import java.lang.UnsupportedOperationException
 
-@OptIn(InternalCoroutinesApi::class)
-fun main(args: Array<String>) = runBlocking {
-  val task = GlobalScope.launch {
-    doSomething()
+fun main() = runBlocking {
+  val defaultContextTask = launch {
+    printCurrentThread()
   }
-  task.join()
+  defaultContextTask.join()
 
-  println("Completed")
+  val disaptcher = newSingleThreadContext(name = "ServiceCall")
+  val contextTask = GlobalScope.launch(disaptcher) {
+    printCurrentThread()
+  }
+  contextTask.join()
 }
 
-fun doSomething() {
-  throw UnsupportedOperationException("Can't do")
+fun printCurrentThread() {
+  println("Running in thread [${Thread.currentThread().name}]")
 }
