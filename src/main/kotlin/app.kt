@@ -10,13 +10,7 @@ fun main(args: Array<String>) = runBlocking {
     doSomething()
   }
 
-  task.join()
-  if (task.isCancelled) {
-    val exception = task.getCancellationException()
-    println("Error with message: ${exception.cause}")
-  } else {
-    println("Success")
-  }
+  task.await()
 
   println("Completed")
 }
