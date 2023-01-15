@@ -1,18 +1,18 @@
 import kotlinx.coroutines.*
+import rss.RssReader
+import javax.xml.parsers.DocumentBuilderFactory
 
+@OptIn(DelicateCoroutinesApi::class)
 fun main() = runBlocking {
-  val defaultContextTask = launch {
-    printCurrentThread()
-  }
-  defaultContextTask.join()
+  val dispatcher = newSingleThreadContext(name = "ServiceCall")
+  val factory = DocumentBuilderFactory.newInstance()
+  val rssReader = RssReader(factory)
 
-  val disaptcher = newSingleThreadContext(name = "ServiceCall")
-  val contextTask = GlobalScope.launch(disaptcher) {
-    printCurrentThread()
+  val task = GlobalScope.launch(dispatcher) {
+    val headLines = rssReader.fetchRssHeadlines("https://feeds.npr.org/1001/rss.xml")
+    val compatedHeadLines = headLines.joinToString(System.lineSeparator())
+    println(compatedHeadLines)
   }
-  contextTask.join()
-}
 
-fun printCurrentThread() {
-  println("Running in thread [${Thread.currentThread().name}]")
+  task.join()
 }
