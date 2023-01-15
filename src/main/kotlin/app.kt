@@ -2,17 +2,30 @@ import kotlinx.coroutines.*
 import rss.RssReader
 import javax.xml.parsers.DocumentBuilderFactory
 
-@OptIn(DelicateCoroutinesApi::class)
-fun main() = runBlocking {
-  val dispatcher = newSingleThreadContext(name = "ServiceCall")
-  val factory = DocumentBuilderFactory.newInstance()
-  val rssReader = RssReader(factory)
+fun main(): Unit = runBlocking {
+  fun asyncLoadNews(feeds: List<String>, rssReader: RssReader, dispatcher: CoroutineDispatcher) = GlobalScope.launch {
+    val requests = feeds.map { rssReader.asyncFetchHeadlines(it, dispatcher) }
+    requests.forEach { it.join() }
 
-  val task = GlobalScope.launch(dispatcher) {
-    val headLines = rssReader.fetchRssHeadlines("https://feeds.npr.org/1001/rss.xml")
-    val compatedHeadLines = headLines.joinToString(System.lineSeparator())
-    println(compatedHeadLines)
+    val headlines = requests
+      .filter { !it.isCancelled }
+      .flatMap { it.getCompleted() }
+
+    val failed = requests.filter { it.isCancelled }.size
+
+    println("Success: ${feeds.size - failed}")
+    println("Failed: ${failed}")
+    println((0 until 1).map { System.lineSeparator() }.joinToString(""))
+    println(headlines.joinToString(System.lineSeparator()))
   }
 
-  task.join()
+  val feeds = listOf(
+    "https://feeds.npr.org/1001/rss.xml",
+    "http://rss.cnn.com/rss/cnn_topstories.rss",
+    "http://feeds.foxnews.com/foxnews/politics?format=xml",
+  )
+  val dispatcher = newFixedThreadPoolContext(2, "IO")
+  val rssReader = RssReader(DocumentBuilderFactory.newInstance())
+
+  asyncLoadNews(feeds, rssReader, dispatcher).join()
 }
